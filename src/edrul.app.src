@@ -1,0 +1,11 @@
+{application, edrul, [
+    {description, "Erlang Drools Rating System"},
+    {vsn, "0.1"},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib
+    ]},
+    {mod, {edrul_app, []}},
+    {env, []}
+]}.

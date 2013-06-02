@@ -1,0 +1,89 @@
+package ratingPackage
+import pl.com.systra.rating.RatingStep
+import pl.com.systra.rating.ChargingParameter
+import pl.com.systra.rating.RatingResult
+import function pl.com.systra.util.LogHelper.log;
+global pl.com.systra.rating.RatingResult rating
+
+// Helper Fact object used to stop rating
+// Just insert into KB: insert(new RatingApplied());
+// and add LHS condition: not RatingApplied()
+declare RatingApplied
+end
+
+rule "SMS MO Rating - VIP customer"
+    salience 10
+when
+    ChargingParameter(name == "resource", value == "/messaging/send_sms")
+    ChargingParameter(name == "profile", value == "vip")
+    not RatingApplied()
+then
+    rating.addStep(new RatingStep(1, 1, "SMS Package"));
+    rating.addStep(new RatingStep(0, 10, "General Cash"));
+    rating.setRatingGroup("SMS_MO_VIP");
+    insert(new RatingApplied());
+    log(drools, "SMS_MO_VIP RATED");
+end
+
+rule "SMS MO Rating"
+    salience 10
+when
+    ChargingParameter(name == "resource", value == "/messaging/send_sms")
+    ChargingParameter(name == "profile", value != "vip")
+    not RatingApplied()
+then
+    rating.addStep(new RatingStep(1, 1, "SMS Package"));
+    rating.addStep(new RatingStep(0, 12, "General Cash"));
+    rating.setRatingGroup("SMS_MO");
+    insert(new RatingApplied());
+    log(drools, "SMS_MO RATED");
+end
+
+rule "MMS MO Rating"
+    salience 10
+when
+    ChargingParameter(name == "resource", value == "/messaging/send_mms")
+    not RatingApplied()
+then
+    rating.addStep(new RatingStep(0, 25, "General Cash"));
+    rating.setRatingGroup("MMS_MO");
+    insert(new RatingApplied());
+    log(drools, "MMS_MO RATED");
+end
+
+rule "USSD MO Rating"
+    salience 10
+when
+    ChargingParameter(name == "resource", value == "/messaging/send_ussd")
+    not RatingApplied()
+then
+    rating.addStep(new RatingStep(0, 10, "General Cash"));
+    rating.setRatingGroup("USSD_MO");
+    insert(new RatingApplied());
+    log(drools, "USSD_MO RATED");
+end
+
+rule "Call Setup Rating"
+    salience 10
+when
+    ChargingParameter(name == "resource", value == "/telephony/setup_call")
+    not RatingApplied()
+then
+    rating.addStep(new RatingStep(0, 5, "General Cash"));
+    rating.setRatingGroup("CALL_SETUP");
+    insert(new RatingApplied());
+    log(drools, "CALL_SETUP RATED");
+end
+
+rule "Unknown resource"
+    salience 1
+    lock-on-active true
+when
+    ChargingParameter(name == "resource", $value : value)
+    not RatingApplied()
+then
+    rating.addStep(new RatingStep(0, 0, "General Cash")); // Let Free
+    rating.setRatingGroup("UNKNOWN_RESOURCE");
+    insert(new RatingApplied());
+    log(drools, "Unknown resource: %s", $value);
+end

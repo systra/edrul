@@ -1,0 +1,123 @@
+#!/bin/bash
+
+
+cd "$(dirname "$0")/.."
+
+HOME_DIR=$PWD
+SERVICE=jnode
+PIDFILE=bin/${SERVICE}.pid
+JAVA_OPTS="-ea -esa -Xfuture -Ddrools.schema.validating=false"
+CONF_DIR=conf
+CLASSPATH=lib/edrul.jar:lib/OtpErlang.jar:lib/antlr-runtime-3.3.jar:lib/drools-compiler-5.5.0.Final.jar:lib/drools-core-5.5.0.Final.jar:lib/knowledge-api-5.5.0.Final.jar:lib/knowledge-internal-api-5.5.0.Final.jar:lib/log4j-1.2.14.jar:lib/mvel2-2.1.3.Final.jar:lib/org.eclipse.jdt.core-3.4.2.v_883_R34x.jar:lib/slf4j-api-1.7.5.jar:lib/slf4j-simple-1.7.5.jar
+
+EXEC="java ${JAVA_OPTS} -classpath ${CONF_DIR}:${CLASSPATH} pl.com.systra.rating.Node rating@`hostname -s` jnode secret change-set.xml"
+
+usage ()
+{
+    echo ""
+    echo "Usage: $0 <command> "
+    echo ""
+    echo "where <command> is one of the following:"
+    echo "    start - start ${SERVICE} if not running"
+    echo "    stop - stop ${SERVICE} if running"
+    echo "    status - report whether ${SERVICE} is running"
+    echo "    restart - stop and restart ${SERVICE}"
+    echo "    version - print ${SERVICE} version"
+    echo "    usage, help - print this message"
+    echo ""
+}
+
+status() {
+    echo -n "Checking for ${SERVICE}: "
+    if [ -f $PIDFILE ] ; then
+        read pid < $PIDFILE
+        if [ -n "$pid" ] && [ `ps -p $pid | grep -c $pid` != "0" ]; then
+            echo "(running)"
+            return 2
+        else
+            echo "(not running)"
+            echo "Warning! Found stale PID file for ${SERVICE} - unclean shutdown?"
+            PID=`cat $PIDFILE`
+            echo "PID file '$PIDFILE' contains PID=$PID but no such process found in the system."
+            return 1
+        fi
+    else
+        echo "(not running)"
+        # check for running processes without PID inside PIDFILE
+        # ps -ef | grep jnode | grep java | grep -v grep
+        return 0
+    fi
+}
+
+case "$1" in
+  console)
+    $EXEC
+  ;;
+  start)
+    if [ -f $PIDFILE ] ; then
+      status
+      case $? in
+        2)
+            echo "${SERVICE} already running"
+            exit 0
+            ;;
+        1)
+            echo "Removing PID file"
+            rm ${PIDFILE}
+            ;;
+        *)
+            # not running - ok
+            ;;
+        esac
+    fi
+    echo -n "Starting $SERVICE... "
+    nohup $EXEC </dev/null >>$HOME_DIR/log/console.log 2>&1 &
+    RETVAL=$?
+    OSTYPE=`uname`
+    if [ "$OSTYPE" == 'Linux' -o "$OSTYPE" == 'Darwin' ]; then
+      PID=`ps ax | grep edrul.jar | grep java | awk '{print $1}'`
+    else
+      # SunOS
+      PID=`ps -wwxaa | grep edul.jar | grep java | awk '{print $1}'`
+    fi
+    if [ $RETVAL -eq 0 -a ! -z "$PID" -a ! -z "$PIDFILE" ]; then
+      echo $PID >$PIDFILE
+    else
+      echo "failed."
+      exit 1
+    fi
+    echo "done."
+    logger -p daemon.notice "Service $SERVICE successfully started."
+  ;;
+  stop)
+    status
+    if [ $? -ne 2 ] ; then
+        exit 0
+    fi
+    echo -n "Shutting down $SERVICE... "
+    PID=`cat $PIDFILE 2>/dev/null`
+    kill -15 $PID 2>/dev/null
+    pwait $PID 1> /dev/null 2>/dev/null
+    logger -p daemon.notice "Service $SERVICE successfully stopped."
+    rm -rf $PIDFILE
+    echo "done."
+  ;;
+  restart)
+    $0 stop  #&/dev/null
+    $0 start #&>/dev/null
+  ;;
+  version)
+    $EXEC version
+  ;;
+  status)
+    status
+  ;;
+  usage|help)
+    usage
+  ;;
+  *)
+    usage
+  ;;
+esac
+
+exit 0
