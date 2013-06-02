@@ -1,5 +1,6 @@
-Erlang & jBoss Drools sample integration
-========================================
+## Erlang & jBoss Drools sample integration
+
+#### Overview 
 
 This is sample rating application aiming for testing integration of Erlang with JVM using JInterface and jBoss rules.
 
@@ -27,8 +28,9 @@ Rating function is defined as follows:
 
 Sample rating rules are placed inside *priv/java/conf/rating_rules.drl* file and defines rates for resource usage:
 
+
 | Resource              | Profile | Cascade                               |
-| :--------------------- :-------- :------------------------------------- |
+| :-------------------- | :------ | :------------------------------------ |
 | /messaging/send_sms   | vip     | 1. 1 unit/event from "SMS Package"    |
 |                       |         | 2. 10 units/event from "General Cash" |
 | /messaging/send_sms   | !vip    | 1. 1 unit/event from "SMS Package"    |
@@ -75,7 +77,7 @@ Feel free to contact me if you found this project interesting or found any ideas
 
 #### Credits:
 
-- to Ingo Schramm ([ingo]((https://github.com/nerlo/nerlo.git)) for JInterface reference
+- to [Ingo Schramm](https://github.com/nerlo) for JInterface reference
 
 
 [![endorse](http://api.coderwall.com/systra/endorse.png)](http://coderwall.com/systra)
