@@ -82,8 +82,6 @@ Feel free to contact me if you found this project interesting or found any ideas
 
 [![endorse](http://api.coderwall.com/systra/endorse.png)](http://coderwall.com/systra)
 
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/systra/edrul/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/systra/edrul/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
